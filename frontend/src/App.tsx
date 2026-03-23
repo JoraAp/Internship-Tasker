@@ -46,6 +46,11 @@ function App() {
       const response = await axios.put<Task>(`${API_URL}/${task.id}`, { 
         completed: !task.completed 
       });
+
+      if (!response.data.completed && response.data.completedAt) {
+        delete response.data.completedAt;
+      }
+      
       setTasks(tasks.map(t => t.id === task.id ? response.data : t));
     } catch (error) {
       console.error("Error updating task:", error);

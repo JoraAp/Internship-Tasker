@@ -23,7 +23,7 @@ interface Task {
   text: string;
   completed: boolean;
   createdAt: string;
-  completedAt?: string;
+  completedAt?: string | undefined;
 }
 
 
@@ -77,11 +77,13 @@ app.put('/tasks/:id', (req: Request, res: Response) => {
   
   task.completed = req.body.completed;
   if (req.body.completed) {
-    task.completedAt = new Date().toLocaleString();
+    task.completedAt = new Date().toISOString();
+  } else {
+    delete task.completedAt;
   }
   
-  saveTasksToFile(tasks);
-  res.json(task);
+  const responseTask = { ...task };
+  res.json(responseTask);
 });
 
 app.delete('/tasks/:id', (req: Request, res: Response) => {
