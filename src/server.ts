@@ -5,7 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url'; 
 
-
+const DATA_FILE = './tasks.json';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -22,6 +22,8 @@ interface Task {
   id: string;
   text: string;
   completed: boolean;
+  createdAt: string;
+  completedAt?: string;
 }
 
 
@@ -55,13 +57,43 @@ app.post('/tasks', (req: Request, res: Response) => {
   const newTask: Task = {
     id: Date.now().toString(),
     text: req.body.text,
-    completed: false
+    completed: false,
+    createdAt: new Date().toISOString()
   };
 
   tasks.push(newTask);
   saveTasksToFile(tasks);
   
   res.status(201).json(newTask);
+});
+
+app.put('/tasks/:id', (req: Request, res: Response) => {
+  const tasks = getTasksFromFile();
+  const task = tasks.find(t => t.id === req.params.id);
+  
+  if (!task) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+  
+  task.completed = req.body.completed;
+  if (req.body.completed) {
+    task.completedAt = new Date().toLocaleString();
+  }
+  
+  saveTasksToFile(tasks);
+  res.json(task);
+});
+
+app.delete('/tasks/:id', (req: Request, res: Response) => {
+  const tasks = getTasksFromFile();
+  const filteredTasks = tasks.filter(t => t.id !== req.params.id);
+  
+  if (tasks.length === filteredTasks.length) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+  
+  saveTasksToFile(filteredTasks);
+  res.status(200).json({ success: true });
 });
 
 app.listen(PORT, () => {

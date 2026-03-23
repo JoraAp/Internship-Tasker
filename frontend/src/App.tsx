@@ -6,6 +6,8 @@ interface Task {
   id: string;
   text: string;
   completed: boolean;
+  createdAt: string;
+  completedAt?: string;
 }
 
 function App() {
@@ -39,6 +41,36 @@ function App() {
     }
   };
 
+  const handleToggleTask = async (task: Task) => {
+    try {
+      const response = await axios.put<Task>(`${API_URL}/${task.id}`, { 
+        completed: !task.completed 
+      });
+      setTasks(tasks.map(t => t.id === task.id ? response.data : t));
+    } catch (error) {
+      console.error("Error updating task:", error);
+    }
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await axios.delete(`${API_URL}/${taskId}`);
+      setTasks(tasks.filter(t => t.id !== taskId));
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
+  };
+
   return (
     <div style={{ padding: '40px', maxWidth: '500px', margin: '0 auto', fontFamily: 'system-ui' }}>
       <h1>Tasker</h1>
@@ -56,22 +88,43 @@ function App() {
         </button>
       </form>
 
-
       <ul style={{ listStyle: 'none', padding: 0 }}>
-        {tasks.map((task) => (
-          <li key={task.id} style={{ 
-            padding: '12px', 
-            borderBottom: '1px solid #eee',
-            display: 'flex',
-            alignItems: 'center'
-          }}>
-            <span style={{ fontSize: '1.2rem', marginRight: '10px' }}>
-              {task.completed ? '✅' : '⏳'}
-            </span>
-            {task.text}
-          </li>
-        ))}
-      </ul>
+  {tasks.map((task) => (
+    <li key={task.id} style={{ 
+      padding: '12px', 
+      borderBottom: '1px solid #eee',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px'
+    }}>
+      <input 
+        type="checkbox" 
+        checked={task.completed}
+        onChange={() => handleToggleTask(task)}
+        style={{ cursor: 'pointer', width: '18px', height: '18px' }}
+      />
+      <div style={{ flex: 1 }}>
+        <span style={{ textDecoration: task.completed ? 'line-through' : 'none', opacity: task.completed ? 0.6 : 1 }}>
+          {task.text}
+        </span>
+        <div style={{ fontSize: '0.85rem', color: '#999', marginTop: '4px' }}>
+          Created: {formatTime(task.createdAt)}
+        </div>
+        {task.completedAt && (
+          <div style={{ fontSize: '0.85rem', color: '#4CAF50', marginTop: '4px' }}>
+            Completed: {formatTime(task.completedAt)}
+          </div>
+        )}
+      </div>
+      <button 
+        onClick={() => handleDeleteTask(task.id)}
+        style={{ padding: '6px 12px', cursor: 'pointer', backgroundColor: '#ff4444', color: 'white', border: 'none', borderRadius: '4px' }}
+      >
+        Delete
+      </button>
+    </li>
+  ))}
+</ul>
       
       {tasks.length === 0 && <p style={{ color: '#888' }}>No tasks yet. Add one above!</p>}
     </div>
